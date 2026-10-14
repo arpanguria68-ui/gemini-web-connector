@@ -1,0 +1,255 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Gemini Connector</title>
+<style>
+:root{--bg:#f5f1e8;--card:#fff;--ink:#0a0a0a;--mut:#5b5b5b;--line:#ddd6c6;--acc:#c4491f;--ok:#1f7a3d;--warn:#a86a00;--bad:#b3261e;--code:#efe9da}
+@media (prefers-color-scheme:dark){:root{--bg:#141414;--card:#1e1e1e;--ink:#f1ede4;--mut:#a29c8e;--line:#333;--acc:#e0673a;--ok:#4cc27a;--warn:#e0a63a;--bad:#ff7b72;--code:#262626}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 system-ui,Segoe UI,sans-serif}
+.wrap{max-width:860px;margin:0 auto;padding:20px 16px 60px}
+h1{font-size:22px;margin:0 0 2px}h2{font-size:17px;margin:22px 0 8px}
+.sub{color:var(--mut);margin:0 0 16px}
+nav{display:flex;gap:6px;flex-wrap:wrap;border-bottom:1px solid var(--line);margin-bottom:16px}
+nav button{background:none;border:0;border-bottom:2px solid transparent;padding:8px 12px;color:var(--mut);font:inherit;cursor:pointer}
+nav button.on{color:var(--ink);border-color:var(--acc);font-weight:600}
+.card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:16px;margin-bottom:14px}
+label{display:block;font-size:13px;color:var(--mut);margin:12px 0 4px}
+input,select,textarea{width:100%;padding:9px 10px;border:1px solid var(--line);border-radius:7px;background:var(--bg);color:var(--ink);font:inherit}
+textarea{resize:vertical;min-height:70px}
+.row{display:flex;gap:10px}.row>*{flex:1}
+.keyrow{display:flex;gap:8px}.keyrow input{flex:1}
+button.b{background:var(--acc);color:#fff;border:0;border-radius:7px;padding:9px 14px;font:inherit;cursor:pointer}
+button.g{background:none;color:var(--ink);border:1px solid var(--line);border-radius:7px;padding:9px 12px;font:inherit;cursor:pointer}
+button:disabled{opacity:.5;cursor:wait}
+pre{background:var(--code);padding:12px;border-radius:8px;overflow:auto;font:13px/1.45 ui-monospace,Consolas,monospace;margin:6px 0;white-space:pre-wrap;word-break:break-all}
+.pill{display:inline-block;padding:2px 9px;border-radius:99px;font-size:12px;border:1px solid var(--line)}
+.ok{color:var(--ok)}.warn{color:var(--warn)}.bad{color:var(--bad)}
+.msg{padding:10px 12px;border-radius:8px;margin:8px 0;white-space:pre-wrap}
+.msg.u{background:var(--code)}.msg.a{border:1px solid var(--line)}
+.meta{font-size:12px;color:var(--mut)}
+.steps{counter-reset:s;list-style:none;padding:0}
+.steps li{counter-increment:s;padding:8px 0 8px 38px;position:relative;border-bottom:1px dashed var(--line)}
+.steps li::before{content:counter(s);position:absolute;left:0;top:8px;width:26px;height:26px;border-radius:50%;background:var(--acc);color:#fff;text-align:center;line-height:26px;font-size:13px}
+.risk{border-left:3px solid var(--bad);padding-left:12px;margin:10px 0}
+.hide{display:none}
+table{border-collapse:collapse;width:100%}td,th{text-align:left;padding:6px 8px;border-bottom:1px solid var(--line);font-size:14px}
+.banner{border:1px solid var(--warn);background:color-mix(in srgb,var(--warn) 12%,transparent);border-radius:8px;padding:10px 12px;margin-bottom:14px;font-size:14px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Gemini Connector</h1>
+  <p class="sub">Use your own signed-in Gemini session through a local OpenAI-compatible proxy.</p>
+  <div class="banner"><b>Unofficial.</b> This rides your browser login, not a Google API. Personal use only. See the Disclaimer tab.</div>
+
+  <nav id="tabs">
+    <button data-t="chat" class="on">Chat</button>
+    <button data-t="settings">Settings</button>
+    <button data-t="tools">Use in other tools</button>
+    <button data-t="how">How it works</button>
+    <button data-t="disc">Disclaimer</button>
+  </nav>
+
+  <!-- CHAT -->
+  <section id="chat">
+    <div class="card">
+      <div id="log"></div>
+      <label for="sys">System prompt (optional)</label>
+      <input id="sys" placeholder="You are a helpful assistant">
+      <label for="prompt">Message</label>
+      <textarea id="prompt" placeholder="Ask something... (Ctrl+Enter to send)"></textarea>
+      <p><button class="b" id="send">Send</button> <button class="g" id="clear">Clear</button>
+      <span class="meta" id="chatmeta"></span></p>
+    </div>
+  </section>
+
+  <!-- SETTINGS -->
+  <section id="settings" class="hide">
+    <div class="card">
+      <label for="base">Proxy base URL</label>
+      <input id="base" placeholder="http://127.0.0.1:8081/v1">
+      <label for="key">API key (from <code>api_keys</code> in the proxy's config.json)</label>
+      <div class="keyrow"><input id="key" type="password" autocomplete="off" placeholder="sk-..."><button class="g" id="showkey" type="button">Show</button></div>
+      <div class="row">
+        <div><label for="model">Model</label>
+          <select id="model"><option>gemini-3.1-pro</option><option>gemini-3.7-flash</option><option>gemini-3.6-flash</option>
+          <option>gemini-3.5-flash-thinking</option><option>gemini-3.5-flash-thinking-lite</option><option>gemini-auto</option><option>gemini-flash-lite</option></select></div>
+        <div><label for="think">Thinking depth <span class="meta">(0 deepest – 4 shallowest, blank = model default)</span></label>
+          <input id="think" type="number" min="0" max="4" step="1" placeholder="blank"></div>
+        <div><label for="timeout">Timeout (seconds)</label><input id="timeout" type="number" min="10" max="600" value="200"></div>
+      </div>
+      <label for="temp">Temperature (blank = proxy default)</label>
+      <input id="temp" type="number" min="0" max="2" step="0.1" placeholder="blank">
+      <p><button class="b" id="save">Save</button> <button class="g" id="refresh" title="Fetch model list from the proxy">Load models from proxy</button>
+      <span class="meta" id="savemeta"></span></p>
+      <p class="meta">Saved only in this browser (localStorage) on this machine. Never sent anywhere except your proxy, via this local page.</p>
+    </div>
+
+    <div class="card">
+      <h2 style="margin-top:0">Connection check</h2>
+      <p><button class="b" id="test">Run health check</button></p>
+      <div id="health"></div>
+      <p class="meta">Mirrors the PDF's receipt test: asks <code>gemini-3.1-pro</code> to say <code>authenticated-ok</code> and checks the model label for a silent downgrade to Flash. May take up to a couple of minutes.</p>
+    </div>
+  </section>
+
+  <!-- TOOLS -->
+  <section id="tools" class="hide">
+    <div class="card">
+      <p>Any tool with an OpenAI-compatible settings field takes these values. They update from your Settings tab.</p>
+      <table>
+        <tr><th>Field</th><th>Value</th></tr>
+        <tr><td>Base URL</td><td><code class="v-base"></code></td></tr>
+        <tr><td>API key</td><td><code class="v-key"></code></td></tr>
+        <tr><td>Model</td><td><code class="v-model"></code></td></tr>
+      </table>
+      <p class="meta">Tip: set the tool's request timeout to 180s or more. Calls can be slow.</p>
+    </div>
+    <div class="card">
+      <h2 style="margin-top:0">Snippets</h2>
+      <div class="meta">Python (openai SDK)</div><pre id="s-py"></pre>
+      <div class="meta">curl</div><pre id="s-curl"></pre>
+      <div class="meta">Claude Code (MCP connector)</div><pre id="s-mcp"></pre>
+      <div class="meta">Env vars (many CLIs and SDKs)</div><pre id="s-env"></pre>
+      <p><button class="g" id="reveal">Reveal key in snippets</button></p>
+    </div>
+    <div class="card"><b>Works with:</b> LangChain / LangGraph, aider-style CLIs, Cherry Studio, ChatBox, LibreChat, Obsidian plugins, Telegram/Discord bots, Playwright/Selenium scripts, cron jobs, function calling (OpenAI <code>tools</code> format).</div>
+  </section>
+
+  <!-- HOW -->
+  <section id="how" class="hide">
+    <div class="card">
+      <h2 style="margin-top:0">System working</h2>
+      <p>Your browser is signed in to gemini.google.com. Every request that page makes carries three things: a cookie proving who you are, a session id, and a rotating security token. The proxy replays that handshake from a script, so Google's servers see your login, not an API client.</p>
+      <ol class="steps">
+        <li><b>You sign in</b> at gemini.google.com in Chrome. Normal login, nothing scripted.</li>
+        <li><b>Cookie-sync extension</b> reads cookies, <code>sapisid</code>, <code>xsrf_token</code>, and <code>gemini_bl</code> from the live tab and exports one local file, <code>gemini-auth.json</code>.</li>
+        <li><b>Proxy</b> (<code>gemini_web2api.py</code>, port 8081) turns OpenAI JSON into Gemini's internal format and replays the handshake on each call. <code>xsrf_token</code>, <code>gemini_bl</code>, <code>auth_user</code> live in its <code>config.json</code>; cookies come from the export file.</li>
+        <li><b>This connector</b> (this page, and the MCP server) calls the proxy at <code>/v1/chat/completions</code> with your API key.</li>
+        <li><b>Your tools</b> point their OpenAI base URL here instead of OpenAI.</li>
+      </ol>
+      <pre>Chrome login → Cookie extension → gemini-auth.json
+                                     ↓
+Your tool / this UI → Proxy :8081 (API key) → gemini.google.com</pre>
+      <p>The auth header is computed (SAPISIDHASH = sha1 of timestamp, sapisid, and the origin). Model choice is a single integer in the request, taken from Gemini's own frontend. None of it is documented by Google.</p>
+    </div>
+    <div class="card">
+      <h2 style="margin-top:0">Reading the health check</h2>
+      <table>
+        <tr><td class="ok">Healthy</td><td>Pro replies and the model label is <code>gemini-3.1-pro</code>.</td></tr>
+        <tr><td class="warn">Degraded</td><td>Pro request answered by Flash: cookie not honored.</td></tr>
+        <tr><td class="bad">HTTP 400 / xsrf</td><td>Token expired.</td></tr>
+        <tr><td class="bad">content: null</td><td>Session expired or rotated.</td></tr>
+        <tr><td class="bad">Unreachable</td><td>Proxy not running. Start it. It has no daemon mode.</td></tr>
+      </table>
+      <p><b>Fix for expiry (about 90 seconds):</b> reopen gemini.google.com/app and refresh, extension → Inspect Session → Export, copy the new <code>xsrf_token</code> and <code>gemini_bl</code> into the proxy's <code>config.json</code>, restart the proxy.</p>
+      <p><b>Uptime:</b> the laptop must stay awake and the proxy running. Options: disable sleep, use an always-on box, or a cheap VPS.</p>
+      <p><b>Reaching it off your Wi-Fi:</b> use Tailscale (recommended), Cloudflare Tunnel, or ngrok. Never forward a public port. Keep <code>api_keys</code> non-empty and use a strong key.</p>
+    </div>
+  </section>
+
+  <!-- DISCLAIMER -->
+  <section id="disc" class="hide">
+    <div class="card">
+      <h2 style="margin-top:0">Disclaimer</h2>
+      <p><b>This is not an API.</b> It is your browser's login, automated. Every risk below comes from that.</p>
+      <div class="risk"><b>Account may be flagged.</b> Google's abuse detection is tuned for one human at a human pace. Scripted or heavy traffic, especially from more than one person, raises the odds. This may also conflict with Google's terms of service. You use it at your own risk.</div>
+      <div class="risk"><b>It can break without warning.</b> The proxy chases Google's frontend. One protocol change and it stops working, with no notice and no upgrade path you control.</div>
+      <div class="risk"><b>No SLA, no support.</b> If it goes down at 2am, the fix is you re-exporting cookies.</div>
+      <div class="risk"><b>The export file is a live login.</b> <code>gemini-auth.json</code> is not an API key, it is an active session. Never commit it, share it, or paste it anywhere (including chats). Treat it like a password. If it leaks, sign out of that session at myaccount.google.com.</div>
+      <h2>Where it's fine, and where it isn't</h2>
+      <table>
+        <tr><th class="ok">Fine for</th><th class="bad">Never for</th></tr>
+        <tr><td>Your own agents, scripts, prototypes</td><td>A product other people sign up for and rely on</td></tr>
+        <tr><td>A personal bot or private chat client</td><td>Anything monetized, sold, or pitched as reliable infrastructure</td></tr>
+        <tr><td>Testing an idea before paying for an API</td><td>Traffic you don't personally control</td></tr>
+      </table>
+      <p>For anything with real users, use the official Google AI Studio / Vertex AI Gemini API.</p>
+      <p class="meta">This connector is an independent tool. It is not affiliated with or endorsed by Google, and it provides no warranty. It contains no cookies or credentials of its own.</p>
+    </div>
+  </section>
+</div>
+
+<script>
+const $=id=>document.getElementById(id);
+const S={base:"",key:"",model:"gemini-3.1-pro",think:"",timeout:200,temp:""};
+const store={get(){try{return JSON.parse(localStorage.getItem("gc")||"{}")}catch{return{}}},set(v){try{localStorage.setItem("gc",JSON.stringify(v))}catch{}}};
+let reveal=false, history=[];
+
+function load(){Object.assign(S,store.get());["base","key","model","think","timeout","temp"].forEach(k=>{$(k).value=S[k]??""});}
+function read(){["base","key","model","think","timeout","temp"].forEach(k=>S[k]=$(k).value.trim());}
+function hdr(){return {"Content-Type":"application/json","Authorization":"Bearer "+S.key,"X-Target-Base":S.base,"X-Timeout-Ms":String((Number(S.timeout)||200)*1000)};}
+function modelName(){return S.model+(S.think!==""&&!S.model.includes("@think=")?"@think="+S.think:"");}
+
+async function call(path,body){
+  const r=await fetch("/api"+path,{method:body?"POST":"GET",headers:hdr(),body:body?JSON.stringify(body):undefined});
+  const t=await r.text(); let j; try{j=JSON.parse(t)}catch{j={raw:t}}
+  return {ok:r.ok,status:r.status,j,ms:+r.headers.get("X-Elapsed-Ms")||0};
+}
+const errText=r=>r.j?.error?.message||r.j?.error||r.j?.raw||("HTTP "+r.status);
+
+// tabs
+$("tabs").onclick=e=>{const t=e.target.dataset?.t;if(!t)return;
+  document.querySelectorAll("nav button").forEach(b=>b.classList.toggle("on",b===e.target));
+  ["chat","settings","tools","how","disc"].forEach(s=>$(s).classList.toggle("hide",s!==t));
+  if(t==="tools")snips();};
+
+// settings
+$("showkey").onclick=()=>{const k=$("key");k.type=k.type==="password"?"text":"password";$("showkey").textContent=k.type==="password"?"Show":"Hide";};
+$("save").onclick=()=>{read();store.set(S);$("savemeta").textContent="Saved.";setTimeout(()=>$("savemeta").textContent="",2000);};
+$("refresh").onclick=async()=>{read();$("savemeta").textContent="Loading...";
+  const r=await call("/models");
+  if(!r.ok){$("savemeta").innerHTML='<span class="bad">'+esc(errText(r))+'</span>';return;}
+  const ids=(r.j.data||[]).map(m=>m.id);const cur=$("model").value;
+  $("model").innerHTML=ids.map(i=>`<option>${esc(i)}</option>`).join("");
+  $("model").value=ids.includes(cur)?cur:ids[0];$("savemeta").textContent=ids.length+" models.";};
+$("test").onclick=async()=>{read();const b=$("test");b.disabled=true;$("health").innerHTML='<p class="meta">Testing... can take a couple of minutes.</p>';
+  const pill=(c,t,d)=>`<p><span class="pill ${c}">${t}</span> ${d}</p>`;
+  let html="";
+  const m=await call("/models");
+  html+=m.ok?pill("ok","Proxy up",(m.j.data||[]).length+" models listed"):pill("bad","Proxy / key problem",esc(errText(m)));
+  if(m.ok){
+    const r=await call("/chat/completions",{model:"gemini-3.1-pro",messages:[{role:"user",content:"say authenticated-ok"}]});
+    const c=r.j?.choices?.[0]?.message?.content;
+    if(!r.ok) html+=pill("bad","Chat failed",esc(errText(r))+(/400|xsrf/i.test(errText(r))?" — likely expired xsrf token. See How it works.":""));
+    else if(c==null) html+=pill("bad","Unhealthy","null content: session expired. Re-export cookies.");
+    else if(r.j.model!=="gemini-3.1-pro") html+=pill("warn","Degraded","asked pro, got "+esc(r.j.model)+". Cookie not honored.");
+    else html+=pill("ok","Healthy","pro replied “"+esc(String(c).trim())+"” in "+(r.ms/1000).toFixed(1)+"s");
+  }
+  $("health").innerHTML=html;b.disabled=false;};
+
+// chat
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+function add(cls,text){const d=document.createElement("div");d.className="msg "+cls;d.textContent=text;$("log").appendChild(d);return d;}
+async function send(){read();const p=$("prompt").value.trim();if(!p)return;
+  if(!S.key){add("a","Set your API key in Settings first.");return;}
+  add("u",p);$("prompt").value="";const w=add("a","...");$("send").disabled=true;
+  const messages=[...($("sys").value.trim()?[{role:"system",content:$("sys").value.trim()}]:[]),...history,{role:"user",content:p}];
+  const body={model:modelName(),messages};if(S.temp!=="")body.temperature=Number(S.temp);
+  const r=await call("/chat/completions",body);
+  if(r.ok&&r.j?.choices?.[0]?.message?.content!=null){
+    const out=r.j.choices[0].message.content;w.textContent=out;history.push({role:"user",content:p},{role:"assistant",content:out});
+    $("chatmeta").textContent=`${r.j.model} · ${(r.ms/1000).toFixed(1)}s`;
+  } else {w.textContent="Error: "+(r.ok?"empty content (session likely expired)":errText(r));w.classList.add("bad");}
+  $("send").disabled=false;}
+$("send").onclick=send;$("prompt").onkeydown=e=>{if(e.ctrlKey&&e.key==="Enter")send();};
+$("clear").onclick=()=>{history=[];$("log").innerHTML="";$("chatmeta").textContent="";};
+
+// tool snippets
+function snips(){read();const k=reveal?S.key:(S.key?S.key.slice(0,5)+"…(hidden)":"<your-key>");
+  document.querySelectorAll(".v-base").forEach(e=>e.textContent=S.base);
+  document.querySelectorAll(".v-key").forEach(e=>e.textContent=k);
+  document.querySelectorAll(".v-model").forEach(e=>e.textContent=modelName());
+  $("s-py").textContent=`from openai import OpenAI\nc = OpenAI(base_url="${S.base}", api_key="${k}", timeout=${S.timeout||200})\nprint(c.chat.completions.create(model="${modelName()}",\n  messages=[{"role":"user","content":"hi"}]).choices[0].message.content)`;
+  $("s-curl").textContent=`curl ${S.base}/chat/completions -H "Content-Type: application/json" -H "Authorization: Bearer ${k}" -d '{"model":"${modelName()}","messages":[{"role":"user","content":"hi"}]}'`;
+  $("s-mcp").textContent=`claude mcp add gemini-web2api -e GEMINI_BASE_URL=${S.base} -e GEMINI_API_KEY=${k} -e GEMINI_MODEL=${S.model} -- node "<path-to>/gemini-connector/server.mjs"`;
+  $("s-env").textContent=`OPENAI_BASE_URL=${S.base}\nOPENAI_API_KEY=${k}`;}
+$("reveal").onclick=()=>{reveal=!reveal;$("reveal").textContent=reveal?"Hide key in snippets":"Reveal key in snippets";snips();};
+
+(async()=>{load();if(!S.base){try{S.base=(await (await fetch("/api/default-base")).json()).base;}catch{S.base="http://127.0.0.1:8081/v1";}$("base").value=S.base;}})();
+</script>
+</body>
+</html>

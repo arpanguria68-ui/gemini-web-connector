@@ -1,0 +1,8 @@
+node_modules
+gemini-auth.json
+.env
+.mcp.json
+dist
+config.json
+__pycache__
+*.pyc

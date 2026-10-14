@@ -1,0 +1,23 @@
+{
+  "name": "gemini-web-connector",
+  "version": "1.0.0",
+  "description": "MCP connector for a local gemini-web2api (OpenAI-compatible) proxy",
+  "type": "module",
+  "main": "server.mjs",
+  "scripts": {
+    "start": "node server.mjs",
+    "ui": "node --env-file-if-exists=.env ui-server.mjs",
+    "check": "node check.mjs",
+    "setup": "python setup.py",
+    "pack": "python pack.py"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.0.0",
+    "zod": "^3.23.8"
+  },
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/arpanguria68-ui/gemini-web-connector"
+  }
+}

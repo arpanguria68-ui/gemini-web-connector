@@ -1,0 +1,227 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Gemini Connector</title>
+<style>
+:root{--bg:#f5f1e8;--card:#fff;--ink:#0a0a0a;--mut:#5b5b5b;--line:#ddd6c6;--acc:#c4491f;--ok:#1f7a3d;--warn:#a86a00;--bad:#b3261e;--code:#efe9da}
+@media (prefers-color-scheme:dark){:root{--bg:#141414;--card:#1e1e1e;--ink:#f1ede4;--mut:#a29c8e;--line:#333;--acc:#e0673a;--ok:#4cc27a;--warn:#e0a63a;--bad:#ff7b72;--code:#262626}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.5 system-ui,Segoe UI,sans-serif}
+.wrap{padding:12px 12px 40px}
+h1{font-size:18px;margin:0}h2{font-size:15px;margin:16px 0 6px}
+.sub{color:var(--mut);margin:2px 0 10px;font-size:13px}
+nav{display:flex;flex-wrap:wrap;gap:2px;border-bottom:1px solid var(--line);margin-bottom:12px}
+nav button{background:none;border:0;border-bottom:2px solid transparent;padding:6px 8px;color:var(--mut);font:inherit;cursor:pointer}
+nav button.on{color:var(--ink);border-color:var(--acc);font-weight:600}
+.card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:12px;margin-bottom:12px}
+label{display:block;font-size:12px;color:var(--mut);margin:10px 0 3px}
+input,select,textarea{width:100%;padding:7px 9px;border:1px solid var(--line);border-radius:7px;background:var(--bg);color:var(--ink);font:inherit}
+textarea{resize:vertical;min-height:64px}
+.row{display:flex;gap:8px}.row>*{flex:1;min-width:0}
+.keyrow{display:flex;gap:6px}.keyrow input{flex:1}
+.b{background:var(--acc);color:#fff;border:0;border-radius:7px;padding:7px 12px;font:inherit;cursor:pointer}
+.g{background:none;color:var(--ink);border:1px solid var(--line);border-radius:7px;padding:7px 10px;font:inherit;cursor:pointer}
+button:disabled{opacity:.5;cursor:wait}
+pre{background:var(--code);padding:9px;border-radius:8px;overflow:auto;font:12px/1.45 ui-monospace,Consolas,monospace;margin:4px 0;white-space:pre-wrap;word-break:break-all}
+.pill{display:inline-block;padding:1px 8px;border-radius:99px;font-size:12px;border:1px solid var(--line)}
+.ok{color:var(--ok)}.warn{color:var(--warn)}.bad{color:var(--bad)}
+.msg{padding:8px 10px;border-radius:8px;margin:6px 0;white-space:pre-wrap;overflow-wrap:anywhere}
+.msg.u{background:var(--code)}.msg.a{border:1px solid var(--line)}
+.meta{font-size:12px;color:var(--mut)}
+.steps{counter-reset:s;list-style:none;padding:0;margin:0}
+.steps li{counter-increment:s;padding:6px 0 6px 32px;position:relative;border-bottom:1px dashed var(--line)}
+.steps li::before{content:counter(s);position:absolute;left:0;top:6px;width:22px;height:22px;border-radius:50%;background:var(--acc);color:#fff;text-align:center;line-height:22px;font-size:12px}
+.risk{border-left:3px solid var(--bad);padding-left:10px;margin:8px 0}
+.hide{display:none}
+table{border-collapse:collapse;width:100%}td,th{text-align:left;padding:5px 6px;border-bottom:1px solid var(--line);font-size:13px;vertical-align:top}
+.banner{border:1px solid var(--warn);border-radius:8px;padding:7px 10px;margin-bottom:10px;font-size:12px}
+.btns{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0}
+code{font-size:12px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Gemini Connector</h1>
+  <p class="sub">Your own Gemini session, through a local OpenAI-compatible proxy.</p>
+  <div class="banner"><b>Unofficial.</b> Rides your browser login, not a Google API. Personal use only. See Disclaimer.</div>
+
+  <nav id="tabs">
+    <button data-t="session" class="on">Session</button>
+    <button data-t="chat">Chat</button>
+    <button data-t="settings">Settings</button>
+    <button data-t="tools">Tools</button>
+    <button data-t="how">How it works</button>
+    <button data-t="disc">Disclaimer</button>
+  </nav>
+
+  <!-- SESSION -->
+  <section id="session">
+    <div class="card">
+      <div id="onboard" style="border:1px solid var(--line);border-radius:8px;padding:8px 10px;margin-bottom:10px">
+        <b id="ob-title">Checking setup…</b>
+        <p class="meta" id="ob-text" style="margin:2px 0 6px"></p>
+        <div id="keysetup" class="hide">
+          <div class="keyrow"><input id="key2" type="password" autocomplete="off" placeholder="sk-..."><button class="b" id="savekey2">Save key</button></div>
+          <details style="margin-top:6px"><summary class="meta">Where do I find my key?</summary>
+            <p class="meta" style="margin:4px 0">It was printed at the end of <code>python setup.py</code>. It's also in <code id="ob-cfg">config.json</code> under <code>api_keys</code>. Same key for every browser on this computer. Each other person has their own, made by their setup.</p>
+          </details>
+        </div>
+        <div class="btns" style="margin:4px 0 0"><button class="g" id="recheck">Re-check</button></div>
+      </div>
+      <p style="margin-top:0">Reads cookies and tokens from your signed-in Gemini tab. Nothing leaves this machine except to your own local helper or a file you save.</p>
+      <div class="btns">
+        <button class="g" id="open">Open Gemini</button>
+        <button class="g" id="inspect">Inspect</button>
+        <button class="b" id="sync">Sync to proxy</button>
+        <button class="g" id="export">Save file…</button>
+      </div>
+      <pre id="sstatus">Ready. Open Gemini, sign in, refresh, then Inspect.</pre>
+      <p class="meta"><b>Sync to proxy</b> sends the session to the local helper (<code>npm run ui</code>), which writes <code>gemini-auth.json</code> and updates <code>config.json</code>. Then restart the proxy. <b>Save file…</b> is the manual route from the PDF.</p>
+    </div>
+  </section>
+
+  <!-- CHAT -->
+  <section id="chat" class="hide">
+    <div class="card">
+      <div id="log"></div>
+      <label for="sys">System prompt (optional)</label>
+      <input id="sys" placeholder="You are a helpful assistant">
+      <label for="prompt">Message</label>
+      <textarea id="prompt" placeholder="Ctrl+Enter to send"></textarea>
+      <div class="btns"><button class="b" id="send">Send</button><button class="g" id="clear">Clear</button><span class="meta" id="chatmeta"></span></div>
+    </div>
+  </section>
+
+  <!-- SETTINGS -->
+  <section id="settings" class="hide">
+    <div class="card">
+      <label for="base">Proxy base URL</label>
+      <input id="base" placeholder="http://127.0.0.1:8081/v1">
+      <label for="key">API key (<code>api_keys</code> in proxy config.json)</label>
+      <div class="keyrow"><input id="key" type="password" autocomplete="off" placeholder="sk-..."><button class="g" id="showkey">Show</button></div>
+      <label for="helper">Local helper URL (for Sync)</label>
+      <input id="helper" placeholder="http://127.0.0.1:8787">
+      <div class="row">
+        <div><label for="model">Model</label>
+          <select id="model"><option>gemini-3.1-pro</option><option>gemini-3.7-flash</option><option>gemini-3.6-flash</option>
+          <option>gemini-3.5-flash-thinking</option><option>gemini-3.5-flash-thinking-lite</option><option>gemini-auto</option><option>gemini-flash-lite</option></select></div>
+        <div><label for="think">Thinking depth (0 deepest – 4)</label><input id="think" type="number" min="0" max="4" step="1" placeholder="model default"></div>
+      </div>
+      <div class="row">
+        <div><label for="timeout">Timeout (s)</label><input id="timeout" type="number" min="10" max="600" value="200"></div>
+        <div><label for="temp">Temperature</label><input id="temp" type="number" min="0" max="2" step="0.1" placeholder="default"></div>
+      </div>
+      <div class="btns"><button class="b" id="save">Save</button><button class="g" id="refresh">Load models</button><span class="meta" id="savemeta"></span></div>
+      <p class="meta">Stored in this browser profile (extension storage) only.</p>
+    </div>
+    <div class="card">
+      <h2 style="margin-top:0">API key</h2>
+      <p class="meta" style="margin-top:0">The key belongs to your <b>proxy</b>, not to a browser or Google. It was made on this computer by <code>setup.py</code> (16 random bytes) and lives in <code>api_keys</code> in the proxy's <code>config.json</code>. Every browser and tool on this computer can use the same key; you paste it once per browser. Another person runs their own setup and gets their own key; never share yours.</p>
+      <div class="btns">
+        <button class="g" id="addkey">Add a key for this browser</button>
+        <button class="g" id="replacekey">Replace all keys</button>
+      </div>
+      <p class="meta"><b>Add</b>: new key for this browser; other browsers and tools keep working, and you can revoke this one later by deleting it from <code>api_keys</code>. <b>Replace</b>: one new key, all old keys stop working (use if a key leaked); update other browsers and tools afterwards. Both need your current key and a proxy restart.</p>
+      <pre id="keyresult" class="hide"></pre>
+    </div>
+    <div class="card">
+      <h2 style="margin-top:0">Connection check</h2>
+      <div class="btns"><button class="b" id="test">Run health check</button></div>
+      <div id="health"></div>
+      <p class="meta">Asks <code>gemini-3.1-pro</code> to say <code>authenticated-ok</code>. Note: the proxy echoes the requested model name, so the label alone can't prove pro routing.</p>
+    </div>
+    <div class="card">
+      <h2 style="margin-top:0">Model speed benchmark</h2>
+      <div class="btns"><button class="b" id="bench">Run benchmark</button><button class="g hide" id="benchstop">Stop</button><span class="meta" id="benchmeta"></span></div>
+      <table id="benchtbl" class="hide"><thead><tr><th>Model</th><th>Time</th><th>Result</th></tr></thead><tbody></tbody></table>
+      <p class="meta">Runs every model one at a time with a short pause (parallel traffic raises the flag risk). Same tiny prompt, single run, so treat times as rough; long prompts and thinking models take longer. Times are saved and shown in the Model list.</p>
+      <p class="meta">Times swing a lot between runs (the same model measured 4s and 11s), so rerun before drawing conclusions. <b>Best quality:</b> 3.1-pro. <b>Longest output:</b> 3.5-flash-thinking. A timeout usually means one upstream call hung; rerun that model.</p>
+    </div>
+  </section>
+
+  <!-- TOOLS -->
+  <section id="tools" class="hide">
+    <div class="card">
+      <p style="margin-top:0">Any tool with an OpenAI-compatible field takes these. Values follow your Settings.</p>
+      <table>
+        <tr><th>Field</th><th>Value</th></tr>
+        <tr><td>Base URL</td><td><code class="v-base"></code></td></tr>
+        <tr><td>API key</td><td><code class="v-key"></code></td></tr>
+        <tr><td>Model</td><td><code class="v-model"></code></td></tr>
+      </table>
+      <p class="meta">Set the tool's request timeout to 180s or more.</p>
+    </div>
+    <div class="card">
+      <div class="meta">Python (openai SDK)</div><pre id="s-py"></pre>
+      <div class="meta">curl</div><pre id="s-curl"></pre>
+      <div class="meta">Claude Code (MCP connector)</div><pre id="s-mcp"></pre>
+      <div class="meta">Env vars</div><pre id="s-env"></pre>
+      <div class="btns"><button class="g" id="reveal">Reveal key</button><button class="g" id="copykey">Copy key</button></div>
+    </div>
+    <div class="card"><b>Works with:</b> LangChain / LangGraph, aider-style CLIs, Cherry Studio, ChatBox, LibreChat, Obsidian plugins, Telegram/Discord bots, Playwright/Selenium scripts, cron jobs, OpenAI <code>tools</code> function calling.</div>
+  </section>
+
+  <!-- HOW -->
+  <section id="how" class="hide">
+    <div class="card">
+      <h2 style="margin-top:0">System working</h2>
+      <p>Gemini's web app sends a cookie, a session id and a rotating security token with every request. The proxy replays that handshake, so Google sees your login, not an API client.</p>
+      <ol class="steps">
+        <li><b>Sign in</b> at gemini.google.com.</li>
+        <li><b>This extension</b> reads cookies, <code>sapisid</code>, <code>xsrf_token</code>, <code>gemini_bl</code> from the live tab (Session tab).</li>
+        <li><b>Sync to proxy</b> writes <code>gemini-auth.json</code> and updates <code>config.json</code> through the local helper. Restart the proxy.</li>
+        <li><b>Proxy</b> (<code>gemini_web2api.py</code>, port 8081) converts OpenAI JSON to Gemini's internal format.</li>
+        <li><b>Chat tab and your tools</b> call <code>/v1/chat/completions</code> with your API key.</li>
+      </ol>
+      <pre>Chrome login → this extension → helper → gemini-auth.json + config.json
+Chat tab / your tools → Proxy :8081 (API key) → gemini.google.com</pre>
+    </div>
+    <div class="card">
+      <h2 style="margin-top:0">API keys</h2>
+      <table>
+        <tr><td>Made by</td><td><code>setup.py</code> on your computer (random), or <b>Settings → API key</b> later. Never by Google.</td></tr>
+        <tr><td>Stored in</td><td>Proxy <code>config.json</code> → <code>api_keys</code> (a list; several keys allowed). Each browser keeps its own copy in extension storage.</td></tr>
+        <tr><td>Checked by</td><td>Proxy on every <code>/v1</code> call (<code>Authorization: Bearer</code>), and helper on Sync/key changes.</td></tr>
+        <tr><td>Your browsers</td><td>Same key (or one each via “Add a key”).</td></tr>
+        <tr><td>Other people</td><td>Their own setup, their own key, their own Google account.</td></tr>
+        <tr><td>Changes apply</td><td>After restarting the proxy (keys load at start).</td></tr>
+      </table>
+    </div>
+    <div class="card">
+      <h2 style="margin-top:0">Reading the health check</h2>
+      <table>
+        <tr><td class="ok">Healthy</td><td>Pro replies with label <code>gemini-3.1-pro</code>.</td></tr>
+        <tr><td class="warn">Degraded</td><td>Pro answered by Flash: cookie not honored.</td></tr>
+        <tr><td class="bad">400 / xsrf</td><td>Token expired. Refresh Gemini tab, Sync, restart proxy.</td></tr>
+        <tr><td class="bad">null content</td><td>Session expired or rotated.</td></tr>
+        <tr><td class="bad">Unreachable</td><td>Proxy not running. It has no daemon mode.</td></tr>
+      </table>
+      <p><b>Speed:</b> most models answer short prompts in 4–20s. If every call takes ~100s, the proxy is running the unpatched <code>urllib</code> path; use the patched <code>gemini_web2api.py</code> (shared <code>httpx</code> client), which logs <code>Upstream ok in X.Xs</code> per request. Run the benchmark in Settings to compare models.</p>
+      <p><b>Uptime:</b> machine must stay awake with the proxy running (disable sleep, always-on box, or cheap VPS). <b>Off your Wi-Fi:</b> Tailscale (recommended), Cloudflare Tunnel or ngrok. Never forward a public port, and keep a strong API key.</p>
+    </div>
+  </section>
+
+  <!-- DISCLAIMER -->
+  <section id="disc" class="hide">
+    <div class="card">
+      <h2 style="margin-top:0">Disclaimer</h2>
+      <p><b>This is not an API.</b> It is your browser's login, automated.</p>
+      <div class="risk"><b>Account may be flagged.</b> Google's abuse detection expects one human at a human pace. Heavy or scripted traffic raises the odds. It may also conflict with Google's terms of service. Use at your own risk.</div>
+      <div class="risk"><b>It can break without warning.</b> The proxy chases Google's frontend, with no notice and no upgrade path you control.</div>
+      <div class="risk"><b>No SLA, no support.</b> If it fails, the fix is re-syncing the session.</div>
+      <div class="risk"><b>The session is a live login.</b> <code>gemini-auth.json</code> is not an API key. Never commit, share or paste it anywhere, including chats. If leaked, sign out that session at myaccount.google.com.</div>
+      <table>
+        <tr><th class="ok">Fine for</th><th class="bad">Never for</th></tr>
+        <tr><td>Your own agents, scripts, prototypes; personal bots; testing ideas</td><td>Products others rely on; anything monetized; traffic you don't control</td></tr>
+      </table>
+      <p>For anything with real users, use the official Google AI Studio / Vertex AI Gemini API.</p>
+      <p class="meta">Independent tool, not affiliated with or endorsed by Google. No warranty.</p>
+    </div>
+  </section>
+</div>
+<script src="session-core.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

@@ -1,0 +1,17 @@
+{
+  "manifest_version": 3,
+  "name": "Gemini Connector",
+  "version": "1.0",
+  "description": "Sync your Gemini session to a local gemini-web2api proxy, chat through it, and copy settings for other tools.",
+  "permissions": ["cookies", "downloads", "tabs", "scripting", "storage", "sidePanel"],
+  "host_permissions": [
+    "https://google.com/*",
+    "https://*.google.com/*",
+    "http://127.0.0.1/*",
+    "http://localhost/*"
+  ],
+  "optional_host_permissions": ["http://*/*", "https://*/*"],
+  "action": { "default_title": "Gemini Connector" },
+  "side_panel": { "default_path": "sidepanel.html" },
+  "background": { "service_worker": "background.js" }
+}
