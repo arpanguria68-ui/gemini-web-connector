@@ -6,6 +6,10 @@ A Chrome extension syncs your signed-in Gemini session to a local proxy, and any
 
 **Website:** https://arpanguria68-ui.github.io/gemini-web-connector/
 
+[![Watch the 20-second demo](docs/media/demo-poster.jpg)](https://arpanguria68-ui.github.io/gemini-web-connector/#demo)
+
+*Click to watch the 20-second demo (setup, side panel, Python call, speed fix). [Direct mp4](docs/media/demo.mp4)*
+
 > **Unofficial. Personal use only.** This automates your browser login, not a Google API. Your account can be
 > flagged, it can break without notice, and there is no support. For anything with real users, use the official
 > [Gemini API](https://ai.google.dev/). Not affiliated with or endorsed by Google.

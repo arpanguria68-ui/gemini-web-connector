@@ -17,7 +17,7 @@ INCLUDE = [
     "setup.py", "pack.py", "README.md", "SHARING.md", "LICENSE", "NOTICE.md", ".gitignore",
 ]
 # never ship these, whatever the allowlist says
-DENY = {".mcp.json", ".env", "config.json", "gemini-auth.json", "node_modules", "dist"}
+DENY = {".mcp.json", ".env", "config.json", "gemini-auth.json", "node_modules", "dist", "brag-output"}
 SECRET = re.compile(
     r"sk-[0-9a-f]{32}"                      # generated proxy keys
     r"|(?:__Secure-[13]PSID|SAPISID|SSID|OSID)=[A-Za-z0-9_\-./]{8,}"  # Google cookies
