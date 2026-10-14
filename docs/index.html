@@ -1,0 +1,230 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Gemini Web Connector</title>
+<meta name="description" content="Use your own Gemini web session as an OpenAI-compatible endpoint: Chrome extension, MCP server, one-command setup. Personal use only.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='14' fill='%23C4491F'/%3E%3Cpath d='M9 16h14M16 9v14' stroke='white' stroke-width='3' stroke-linecap='round'/%3E%3C/svg%3E">
+<style>
+:root{--bg:#f5f1e8;--card:#fffdf8;--ink:#0a0a0a;--mut:#5a564d;--line:#e2dacb;--acc:#c4491f;--navy:#33425e;--gold:#b8935a;--code:#efe8d8;--ok:#1f7a3d;--bad:#b3261e}
+@media (prefers-color-scheme:dark){:root:not([data-theme=light]){--bg:#121212;--card:#1b1b1b;--ink:#f1ede4;--mut:#a39d90;--line:#2e2e2e;--acc:#e0673a;--navy:#8fa3c8;--gold:#d2b07a;--code:#232323;--ok:#4cc27a;--bad:#ff7b72}}
+:root[data-theme=dark]{--bg:#121212;--card:#1b1b1b;--ink:#f1ede4;--mut:#a39d90;--line:#2e2e2e;--acc:#e0673a;--navy:#8fa3c8;--gold:#d2b07a;--code:#232323;--ok:#4cc27a;--bad:#ff7b72}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.6 system-ui,-apple-system,"Segoe UI",sans-serif}
+a{color:var(--acc)}
+.wrap{max-width:1000px;margin:0 auto;padding:0 16px}
+header.top{position:sticky;top:0;z-index:5;background:color-mix(in srgb,var(--bg) 88%,transparent);backdrop-filter:blur(8px);border-bottom:1px solid var(--line)}
+header.top .wrap{display:flex;align-items:center;gap:16px;height:56px}
+.brand{font-weight:700;text-decoration:none;color:var(--ink);display:flex;gap:8px;align-items:center}
+.dot{width:12px;height:12px;border-radius:50%;background:var(--acc)}
+nav.links{margin-left:auto;display:flex;gap:16px;font-size:14px}
+nav.links a{color:var(--mut);text-decoration:none}nav.links a:hover{color:var(--ink)}
+nav.links a,.brand{white-space:nowrap}
+@media (max-width:720px){nav.links .opt{display:none}}
+@media (max-width:520px){nav.links .opt2{display:none}header.top .wrap{gap:10px}}
+.hero{padding:64px 0 40px}
+.eyebrow{font:600 12px/1 ui-monospace,Consolas,monospace;letter-spacing:.12em;text-transform:uppercase;color:var(--acc)}
+h1{font:600 clamp(32px,6vw,54px)/1.08 Georgia,"Times New Roman",serif;margin:14px 0 16px;letter-spacing:-.01em}
+h1 em{color:var(--acc)}
+.lead{font-size:clamp(17px,2.2vw,20px);color:var(--mut);max-width:720px;margin:0 0 26px}
+.cta{display:flex;flex-wrap:wrap;gap:10px}
+.btn{display:inline-block;padding:11px 18px;border-radius:9px;text-decoration:none;font-weight:600;border:1px solid var(--line);color:var(--ink);background:var(--card)}
+.btn.p{background:var(--acc);border-color:var(--acc);color:#fff}
+.warnbar{margin-top:28px;border:1px solid var(--gold);border-radius:10px;padding:12px 14px;font-size:14px;background:color-mix(in srgb,var(--gold) 10%,transparent)}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:28px}
+.stat{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:14px}
+.stat b{display:block;font:600 26px/1.1 Georgia,serif;color:var(--navy)}
+.stat span{font-size:13px;color:var(--mut)}
+@media (max-width:720px){.stats{grid-template-columns:repeat(2,1fr)}}
+section{padding:44px 0;border-top:1px solid var(--line)}
+h2{font:600 clamp(24px,3.5vw,32px)/1.2 Georgia,serif;margin:0 0 8px}
+.sub{color:var(--mut);margin:0 0 22px;max-width:700px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:18px}
+.card h3{margin:0 0 6px;font-size:17px}
+.card p{margin:0;color:var(--mut);font-size:15px}
+.tag{font:600 11px/1 ui-monospace,Consolas,monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--acc);display:block;margin-bottom:8px}
+.flow{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;counter-reset:f}
+.flow div{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px;position:relative;counter-increment:f}
+.flow div::before{content:counter(f,decimal-leading-zero);font:600 12px ui-monospace,Consolas,monospace;color:var(--acc)}
+.flow b{display:block;margin:4px 0}
+.flow p{margin:0;font-size:14px;color:var(--mut)}
+@media (max-width:820px){.flow{grid-template-columns:1fr}}
+.note{font-size:14px;color:var(--mut);margin-top:14px}
+pre{position:relative;background:var(--code);border-radius:10px;padding:14px 16px;overflow-x:auto;font:14px/1.55 ui-monospace,Consolas,monospace;margin:10px 0}
+code{font-family:ui-monospace,Consolas,monospace;font-size:.92em}
+p code,td code,li code{background:var(--code);padding:1px 5px;border-radius:5px}
+.copy{position:absolute;top:8px;right:8px;font:12px system-ui;padding:4px 9px;border-radius:6px;border:1px solid var(--line);background:var(--card);color:var(--ink);cursor:pointer}
+ol.steps{padding-left:20px}ol.steps li{margin:8px 0}
+table{border-collapse:collapse;width:100%;font-size:15px}
+th,td{text-align:left;padding:9px 10px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-size:13px;color:var(--mut);font-weight:600}
+.tw{overflow-x:auto}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:14px}.two>*{min-width:0}
+td code{word-break:break-all}
+@media (max-width:720px){.two{grid-template-columns:1fr}}
+.risk{border-left:3px solid var(--bad);padding:2px 0 2px 12px;margin:12px 0}
+.risk b{display:block}
+.okc{color:var(--ok)}.badc{color:var(--bad)}
+.issue{display:flex;gap:10px;align-items:flex-start;margin:10px 0}
+.pill{font:600 11px/1 ui-monospace,Consolas,monospace;padding:4px 7px;border-radius:99px;border:1px solid var(--line);white-space:nowrap;margin-top:3px}
+footer{padding:30px 0 50px;border-top:1px solid var(--line);color:var(--mut);font-size:14px}
+.theme{background:none;border:1px solid var(--line);border-radius:8px;color:var(--ink);padding:4px 8px;cursor:pointer;font-size:13px}
+</style>
+</head>
+<body>
+<header class="top"><div class="wrap">
+  <a class="brand" href="#"><span class="dot"></span>Gemini Web Connector</a>
+  <nav class="links">
+    <a href="#how" class="opt">How it works</a><a href="#start" class="opt2">Quick start</a><a href="#keys" class="opt">API keys</a><a href="#risks" class="opt2">Risks</a>
+    <a href="https://github.com/arpanguria68-ui/gemini-web-connector">GitHub</a>
+  </nav>
+  <button class="theme" id="theme" title="Toggle theme">◐</button>
+</div></header>
+
+<main class="wrap">
+  <div class="hero">
+    <span class="eyebrow">Chrome extension · MCP server · one-command setup</span>
+    <h1>The Gemini subscription you already have, <em>as an API</em> on your own machine.</h1>
+    <p class="lead">Sync your signed-in Gemini session from Chrome to a local OpenAI-compatible proxy. Then point any script, agent, chat app or Claude (via MCP) at <code>localhost</code>.</p>
+    <div class="cta">
+      <a class="btn p" href="#start">Get started</a>
+      <a class="btn" href="https://github.com/arpanguria68-ui/gemini-web-connector">View on GitHub</a>
+    </div>
+    <div class="warnbar"><b>Unofficial, personal use only.</b> This automates your browser login, not a Google API. Your account can be flagged, it can break without notice, and there's no support. Building something for other people? Use the official <a href="https://ai.google.dev/">Gemini API</a>.</div>
+    <div class="stats">
+      <div class="stat"><b>1</b><span>command to set up</span></div>
+      <div class="stat"><b>$0</b><span>extra per month</span></div>
+      <div class="stat"><b>~4–15s</b><span>typical short reply (was ~110s)</span></div>
+      <div class="stat"><b>127.0.0.1</b><span>never exposed by default</span></div>
+    </div>
+  </div>
+
+  <section id="how">
+    <h2>How it works</h2>
+    <p class="sub">Gemini's web app sends a cookie, a session id and a rotating security token with every request. The proxy replays that handshake, so Google sees your own login.</p>
+    <div class="flow">
+      <div><b>Sign in</b><p>Normal login at gemini.google.com in Chrome.</p></div>
+      <div><b>Extension</b><p>Reads cookies and tokens from the live tab.</p></div>
+      <div><b>Sync</b><p>Local helper writes them into the proxy config.</p></div>
+      <div><b>Proxy</b><p>Turns OpenAI JSON into Gemini's web format on <code>:8081</code>.</p></div>
+      <div><b>Your tools</b><p>Call <code>/v1/chat/completions</code> with your API key.</p></div>
+    </div>
+    <p class="note">Everything runs on your machine. The only outside traffic is the proxy talking to gemini.google.com as you.</p>
+  </section>
+
+  <section id="features">
+    <h2>What's in the box</h2>
+    <p class="sub">Built on <a href="https://github.com/Sophomoresty/gemini-web2api">gemini-web2api</a>, with a friendlier front end and fixes.</p>
+    <div class="grid">
+      <div class="card"><span class="tag">Extension</span><h3>Side-panel control centre</h3><p>Inspect and sync your session, chat, run a health check, benchmark models, copy settings for other tools.</p></div>
+      <div class="card"><span class="tag">Onboarding</span><h3>Knows if you're new</h3><p>Tells a fresh computer from a fresh browser, spots rejected keys and a stopped proxy, and says exactly what to do next.</p></div>
+      <div class="card"><span class="tag">Keys</span><h3>Your own API key</h3><p>Random key made locally. Add one per browser or replace them all in one click.</p></div>
+      <div class="card"><span class="tag">MCP</span><h3>Works in Claude</h3><p><code>gemini_chat</code>, <code>gemini_models</code>, <code>gemini_health</code> tools for Claude Code and other MCP clients.</p></div>
+      <div class="card"><span class="tag">Proxy patch</span><h3>~10× faster replies</h3><p>Non-streaming calls switched to a pooled HTTP client, plus sane timeouts, retries and build-id refresh.</p></div>
+      <div class="card"><span class="tag">Sharing</span><h3>Safe to hand on</h3><p><code>pack.py</code> builds a zip from an allowlist and refuses if it finds a key or cookie.</p></div>
+    </div>
+  </section>
+
+  <section id="start">
+    <h2>Quick start</h2>
+    <p class="sub">Needs Python 3.10+, Node 20+, git, Chrome, and your own Gemini account.</p>
+<pre><button class="copy">Copy</button>git clone https://github.com/arpanguria68-ui/gemini-web-connector
+cd gemini-web-connector
+python setup.py</pre>
+    <p class="note"><code>setup.py</code> downloads the proxy at a pinned version, applies the fixes, installs dependencies, creates your own config and random API key, and prints the key.</p>
+    <ol class="steps">
+      <li><b>Start the proxy:</b> <code>cd ../gemini-web2api &amp;&amp; python gemini_web2api.py</code></li>
+      <li><b>Start the helper:</b> <code>npm run ui</code> in the repo folder.</li>
+      <li><b>Load the extension:</b> <code>chrome://extensions</code> → Developer mode → <b>Load unpacked</b> → the repo's <code>extension/</code> folder.</li>
+      <li><b>Connect:</b> open the side panel → <b>Session</b> → paste your key → sign in at gemini.google.com → <b>Inspect</b> → <b>Sync to proxy</b>.</li>
+      <li><b>Verify:</b> restart the proxy → <b>Settings → Run health check</b>.</li>
+    </ol>
+  </section>
+
+  <section id="use">
+    <h2>Use it anywhere</h2>
+    <p class="sub">If a tool has a "custom OpenAI endpoint" field, it works: LangChain, aider-style CLIs, Cherry Studio, ChatBox, LibreChat, Obsidian plugins, bots, cron jobs.</p>
+    <div class="two">
+      <div class="tw"><table>
+        <tr><th>Field</th><th>Value</th></tr>
+        <tr><td>Base URL</td><td><code>http://127.0.0.1:8081/v1</code></td></tr>
+        <tr><td>API key</td><td>your key from <code>setup.py</code></td></tr>
+        <tr><td>Model</td><td><code>gemini-3.6-flash</code>, <code>gemini-3.1-pro</code>, …</td></tr>
+        <tr><td>Thinking</td><td><code>model@think=N</code>, N = 0 (deepest) to 4</td></tr>
+      </table></div>
+      <div>
+<pre><button class="copy">Copy</button>from openai import OpenAI
+c = OpenAI(base_url="http://127.0.0.1:8081/v1",
+           api_key="sk-...", timeout=120)
+r = c.chat.completions.create(model="gemini-3.6-flash",
+      messages=[{"role": "user", "content": "hi"}])
+print(r.choices[0].message.content)</pre>
+<pre><button class="copy">Copy</button>claude mcp add gemini-web2api -e GEMINI_API_KEY=sk-... \
+  -- node "&lt;path-to&gt;/gemini-web-connector/server.mjs"</pre>
+      </div>
+    </div>
+  </section>
+
+  <section id="keys">
+    <h2>API keys, explained</h2>
+    <p class="sub">The key is a password for <b>your local proxy</b>. Google never sees it.</p>
+    <div class="tw"><table>
+      <tr><td>Made by</td><td><code>setup.py</code> on your computer (16 random bytes), or later in <b>Settings → API key</b>.</td></tr>
+      <tr><td>Stored in</td><td>The proxy's <code>config.json</code> → <code>api_keys</code> (a list). Each browser keeps its own copy.</td></tr>
+      <tr><td>Your browsers</td><td>Same key everywhere on your computer: paste once per browser, or add one per browser.</td></tr>
+      <tr><td>Other people</td><td>Their own setup, their own key, their own Google account. Never share yours.</td></tr>
+      <tr><td>Leaked?</td><td><b>Replace all keys</b>, restart the proxy, paste the new key where needed.</td></tr>
+    </table></div>
+  </section>
+
+  <section id="issues">
+    <h2>Known issues</h2>
+    <div class="issue"><span class="pill badc">open</span><div><b>"Pro" may actually be Flash.</b> Google now ignores the model number unless a model header is sent; see upstream <a href="https://github.com/Sophomoresty/gemini-web2api/issues/82">#82</a>. The proxy repeats the requested name, so the label can't prove routing. Fix in progress.</div></div>
+    <div class="issue"><span class="pill badc">open</span><div><b>Chats don't appear in your Gemini history.</b></div></div>
+    <div class="issue"><span class="pill">expected</span><div><b>Sessions expire.</b> HTTP 400 / xsrf errors or empty replies mean: refresh the Gemini tab → Sync → restart the proxy.</div></div>
+    <div class="issue"><span class="pill">expected</span><div><b>Speed varies</b> from a few seconds to ~20s for short prompts. Use the benchmark in the extension.</div></div>
+  </section>
+
+  <section id="risks">
+    <h2>The honest risks</h2>
+    <div class="two">
+      <div>
+        <div class="risk"><b>Your account can be flagged.</b>Google's abuse detection expects one person at a human pace. Scripted or shared traffic raises the odds, and this may conflict with Google's terms.</div>
+        <div class="risk"><b>It can break without warning.</b>The proxy chases Google's web app. One change on their side and it stops.</div>
+        <div class="risk"><b>No SLA, no support.</b>If it goes down, the fix is you re-syncing.</div>
+        <div class="risk"><b>Your session file is a live login.</b><code>gemini-auth.json</code> and the proxy's <code>config.json</code> must never be shared, committed or pasted anywhere.</div>
+      </div>
+      <div class="tw"><table>
+        <tr><th class="okc">Fine for</th><th class="badc">Never for</th></tr>
+        <tr><td>Your own agents, scripts, prototypes</td><td>Products other people sign up for</td></tr>
+        <tr><td>A personal bot or private chat client</td><td>Anything monetized or sold as reliable</td></tr>
+        <tr><td>Testing an idea before paying for an API</td><td>Traffic you don't personally control</td></tr>
+        <tr><td>One person, one account, one proxy</td><td>Several people on one account</td></tr>
+      </table></div>
+    </div>
+  </section>
+</main>
+
+<footer><div class="wrap">
+  MIT licensed · Built on <a href="https://github.com/Sophomoresty/gemini-web2api">Sophomoresty/gemini-web2api</a> (MIT) · Not affiliated with or endorsed by Google ·
+  <a href="https://github.com/arpanguria68-ui/gemini-web-connector">Source on GitHub</a>
+</div></footer>
+
+<script>
+document.querySelectorAll("pre .copy").forEach((b) => b.addEventListener("click", async () => {
+  const text = b.parentElement.innerText.replace(/^Copy\s*/, "").replace(/^Copied\s*/, "");
+  try { await navigator.clipboard.writeText(text); b.textContent = "Copied"; setTimeout(() => (b.textContent = "Copy"), 1500); } catch {}
+}));
+const root = document.documentElement;
+try { const t = localStorage.getItem("theme"); if (t) root.dataset.theme = t; } catch {}
+document.getElementById("theme").addEventListener("click", () => {
+  const dark = root.dataset.theme ? root.dataset.theme === "dark" : matchMedia("(prefers-color-scheme: dark)").matches;
+  root.dataset.theme = dark ? "light" : "dark";
+  try { localStorage.setItem("theme", root.dataset.theme); } catch {}
+});
+</script>
+</body>
+</html>
